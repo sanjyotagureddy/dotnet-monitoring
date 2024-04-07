@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  productdb:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+  
+  elasticsearch:  
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.3
+
+  monitoring.api:
+    image: ${DOCKER_REGISTRY-}monitoringapi
+    build:
+      context: .
+      dockerfile: src/Monitoring.Api/Dockerfile

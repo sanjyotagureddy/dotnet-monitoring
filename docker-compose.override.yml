@@ -1,0 +1,62 @@
+version: '3.4'
+
+services:
+  productdb:
+    container_name: productdb
+    environment:
+      SA_PASSWORD: "SwN12345678"
+      ACCEPT_EULA: "Y"
+    restart: always
+    ports:
+      - "1433:1433"
+
+  elasticsearch:
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name-es-docker-cluster
+      - xpack.security.enabled=false
+      - "discovery.type=single-node"
+    networks:
+      - es-net
+    volumes:
+      - data01:/urs/share/elasticsearch/data 
+    ports:
+      - 9200:9200
+
+  kibana:
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - es-net
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+
+  monitoring.api:
+    container_name: dotnet.monitoring.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ElasticConfiguration:Uri=http://elasticsearch:9200"
+      - ConnectionStrings__Product=Server=productdb;Database=ProductDb;User Id=sa;Password=SwN12345678;Encrypt=False;TrustServerCertificate=True
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+    ports:
+      - "8080:80"
+      - "8081:80"
+    depends_on:
+      - productdb
+      - kibana
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+
+volumes:
+  data01:
+    driver: local
+networks:
+  es-net:
+    driver: bridge
